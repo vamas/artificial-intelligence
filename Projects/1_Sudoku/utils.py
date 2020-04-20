@@ -66,7 +66,7 @@ def extract_peers(units, boxes):
     return peers
 
 
-def assign_value(values, box, value):
+def assign_value(values, box, value, method, time, iteration):
     """You must use this function to update your values dictionary if you want to
     try using the provided visualization tool. This function records each assignment
     (in order) for later reconstruction.
@@ -88,7 +88,7 @@ def assign_value(values, box, value):
     prev = values2grid(values)
     values[box] = value
     if len(value) == 1:
-        history[values2grid(values)] = (prev, (box, value))
+        history[values2grid(values)] = (prev, (box, value), method, time, iteration)
     return values
 
 def cross(A, B):
