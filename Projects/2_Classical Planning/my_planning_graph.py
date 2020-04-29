@@ -20,7 +20,16 @@ class ActionLayer(BaseActionLayer):
         layers.ActionNode
         """
         # TODO: implement this function
-        raise NotImplementedError
+        # We need to compare effects of both actions and determine 
+        # if there is an effect which is positive in one action
+        # and negative in another action
+        #print("InconsistentEffects ActionA: {0}".format(actionA.effects))
+        for effectA in self.children[actionA]:
+            for effectB in self.children[actionB]:
+                if effectA == ~effectB:
+                    return True
+        return False
+        #raise NotImplementedError
 
 
     def _interference(self, actionA, actionB):
@@ -35,7 +44,23 @@ class ActionLayer(BaseActionLayer):
         layers.ActionNode
         """
         # TODO: implement this function
-        raise NotImplementedError
+        # print("Interference ActionA: {0}".format(actionA))
+        # print("Interference ActionB: {0}".format(actionB))
+        # print("Interference ActionA.Effects: {0}".format(actionA.effects))
+        # print("Interference ActionB.Effects: {0}".format(actionB.effects))
+        # print("Interference ActionA.Parents: {0}".format(actionA.parents))
+        # print("Interference ActionB.Parents: {0}".format(actionB.parents))
+        for precondA in self.parents[actionA]:
+            for effectB in self.children[actionB]:
+                if precondA == ~effectB:
+                    return True
+        for effectA in self.children[actionA]:
+            for precondB in self.parents[actionB]:
+                if precondB == ~effectA:
+                    return True
+        
+        return False
+        #raise NotImplementedError
 
     def _competing_needs(self, actionA, actionB):
         """ Return True if any preconditions of the two actions are pairwise mutex in the parent layer
@@ -50,7 +75,14 @@ class ActionLayer(BaseActionLayer):
         layers.BaseLayer.parent_layer
         """
         # TODO: implement this function
-        raise NotImplementedError
+        # parent = self.parent_layer
+        for precondA in self.parents[actionA]:
+            for precondB in self.parents[actionB]:
+                if precondA == ~precondB:
+                    return True
+        return False
+
+        #raise NotImplementedError
 
 
 class LiteralLayer(BaseLiteralLayer):
@@ -66,12 +98,16 @@ class LiteralLayer(BaseLiteralLayer):
         --------
         layers.BaseLayer.parent_layer
         """
+        return True
         # TODO: implement this function
-        raise NotImplementedError
+        # raise NotImplementedError
 
     def _negation(self, literalA, literalB):
         """ Return True if two literals are negations of each other """
         # TODO: implement this function
+        if literalA == ~literalB:
+            return True
+        return False
         raise NotImplementedError
 
 
