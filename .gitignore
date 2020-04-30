@@ -1,3 +1,5 @@
 __pycache__/
 .ipynb_checkpoints
 Projects/2_Classical Planning/.vscode/settings.json
+Projects/2_Classical Planning/.vscode/.ropeproject/objectdb
+Projects/2_Classical Planning/.vscode/.ropeproject/config.py

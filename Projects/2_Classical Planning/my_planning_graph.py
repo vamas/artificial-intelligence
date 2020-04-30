@@ -153,7 +153,12 @@ class PlanningGraph:
         Russell-Norvig 10.3.1 (3rd Edition)
         """
         # TODO: implement this function
-        raise NotImplementedError
+        self.fill()
+        final_layer = self.literal_layers[-1]
+        goal_occurences = {}
+        for literal in self.goal:
+            goal_occurences[literal] = self.level_cost(literal)
+        return sum(goal_occurences.values())
 
     def h_maxlevel(self):
         """ Calculate the max level heuristic for the planning graph
@@ -183,7 +188,19 @@ class PlanningGraph:
         WARNING: you should expect long runtimes using this heuristic with A*
         """
         # TODO: implement maxlevel heuristic
-        raise NotImplementedError
+        self.fill()
+        final_layer = self.literal_layers[-1]
+        goal_occurences = {}
+        for literal in self.goal:
+            goal_occurences[literal] = self.level_cost(literal)
+        return max(goal_occurences.values())
+    
+    def level_cost(self, goal):
+        layer_index = 0
+        for layer in self.literal_layers:
+            if goal in layer:
+                return layer_index
+            layer_index = layer_index + 1
 
     def h_setlevel(self):
         """ Calculate the set level heuristic for the planning graph
