@@ -5,6 +5,13 @@ from aimacode.utils import expr
 
 from layers import BaseActionLayer, BaseLiteralLayer, makeNoOp, make_node
 
+def is_only_way_to_achieve(layer, precond):
+    if len([e for e in layer if e != precond]):
+        return False
+    return True
+
+def is_negating(itemA, itemB):
+    return itemA == ~itemB
 
 class ActionLayer(BaseActionLayer):
 
@@ -18,12 +25,10 @@ class ActionLayer(BaseActionLayer):
         See Also
         --------
         layers.ActionNode
-        """
-        # TODO: implement this function
+        """        
         for effectA in self.children[actionA]:
             for effectB in self.children[actionB]:
-                if effectA == ~effectB:
-                    return True
+                return is_negating(effectA, effectB)
         return False
 
     def _interference(self, actionA, actionB):
@@ -37,16 +42,12 @@ class ActionLayer(BaseActionLayer):
         --------
         layers.ActionNode
         """
-        # TODO: implement this function
         for precondA in self.parents[actionA]:
             for effectB in self.children[actionB]:
-                if precondA == ~effectB:
-                    return True
+                return is_negating(precondA, effectB)
         for effectA in self.children[actionA]:
             for precondB in self.parents[actionB]:
-                if precondB == ~effectA:
-                    return True
-        
+                return is_negating(precondB, effectA)
         return False
 
     def _competing_needs(self, actionA, actionB):
@@ -61,14 +62,10 @@ class ActionLayer(BaseActionLayer):
         layers.ActionNode
         layers.BaseLayer.parent_layer
         """
-        # TODO: implement this function
         parent = self.parent_layer
         for precondA in self.parents[actionA]:
             for precondB in self.parents[actionB]:
-                if precondA == ~precondB:
-                    return True
-                if parent.is_mutex(precondA, precondB):
-                    return True        
+                return is_negating(precondA, precondB) | parent.is_mutex(precondA, precondB)
         return False
 
 class LiteralLayer(BaseLiteralLayer):
@@ -87,21 +84,13 @@ class LiteralLayer(BaseLiteralLayer):
         parent = self.parent_layer
         for precondA in self.parents[literalA]:
             for precondB in self.parents[literalB]:
-                if parent.is_mutex(precondA, precondB) and self.only_way(precondA, literalA) and self.only_way(precondB, literalB):
+                if parent.is_mutex(precondA, precondB) and is_only_way_to_achieve(self.parents[literalA], precondA) and is_only_way_to_achieve(self.parents[literalB], precondB):
                     return True 
         return False
-        
+
     def _negation(self, literalA, literalB):
         """ Return True if two literals are negations of each other """
-        # TODO: implement this function
-        if literalA == ~literalB:
-            return True
-        return False
-
-    def only_way(self, precond, literal):
-        if len([e for e in self.parents[literal] if e != precond]):
-            return False
-        return True
+        return is_negating(literalA, literalB)
 
 class PlanningGraph:
     def __init__(self, problem, state, serialize=True, ignore_mutexes=False):
