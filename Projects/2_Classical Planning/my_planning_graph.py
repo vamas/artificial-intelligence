@@ -65,7 +65,8 @@ class ActionLayer(BaseActionLayer):
         parent = self.parent_layer
         for precondA in self.parents[actionA]:
             for precondB in self.parents[actionB]:
-                return is_negating(precondA, precondB) | parent.is_mutex(precondA, precondB)
+                #return is_negating(precondA, precondB) | parent.is_mutex(precondA, precondB)
+                return parent.is_mutex(precondA, precondB)
         return False
 
 class LiteralLayer(BaseLiteralLayer):
@@ -82,11 +83,11 @@ class LiteralLayer(BaseLiteralLayer):
         layers.BaseLayer.parent_layer
         """
         parent = self.parent_layer
-        for precondA in self.parents[literalA]:
-            for precondB in self.parents[literalB]:
-                if parent.is_mutex(precondA, precondB) and is_only_way_to_achieve(self.parents[literalA], precondA) and is_only_way_to_achieve(self.parents[literalB], precondB):
-                    return True 
-        return False
+        for actionA in self.parents[literalA]:
+            for actionB in self.parents[literalB]:
+                if not parent.is_mutex(actionA, actionB): # and not is_only_way_to_achieve(self.parents[literalA], actionA) and not is_only_way_to_achieve(self.parents[literalB], actionB):
+                    return False
+        return True
 
     def _negation(self, literalA, literalB):
         """ Return True if two literals are negations of each other """
@@ -154,7 +155,6 @@ class PlanningGraph:
         """
         # TODO: implement this function
         self.fill()
-        final_layer = self.literal_layers[-1]
         goal_occurences = {}
         for literal in self.goal:
             goal_occurences[literal] = self.level_cost(literal)
@@ -189,7 +189,6 @@ class PlanningGraph:
         """
         # TODO: implement maxlevel heuristic
         self.fill()
-        final_layer = self.literal_layers[-1]
         goal_occurences = {}
         for literal in self.goal:
             goal_occurences[literal] = self.level_cost(literal)
@@ -224,8 +223,29 @@ class PlanningGraph:
         -----
         WARNING: you should expect long runtimes using this heuristic on complex problems
         """
-        # TODO: implement setlevel heuristic
-        raise NotImplementedError
+        self.fill()
+        for loc, layer in enumerate(self.literal_layers):
+            allGoalsInLayer = True
+            for goal in self.goal:
+                if goal not in layer:
+                    allGoalsInLayer = False
+                    break
+            # print("All goals are in layer-{0}: {1}".format(loc, allGoalsInLayer))
+            if not allGoalsInLayer: continue
+            
+            twoGoalsAreMutex = False
+            for goalA in self.goal:
+                for goalB in self.goal:
+                    # print("IsMutex {0}-{1}: {2}".format(goalA, goalB, layer.is_mutex(goalA, goalB)))
+                    if layer.is_mutex(goalA, goalB):
+                        twoGoalsAreMutex = True
+                        break 
+
+            # print("Goals are mutexes: {0} on layer-{1}".format(twoGoalsAreMutex, loc))
+            if not twoGoalsAreMutex:
+                return loc
+
+        return -1
 
     ##############################################################################
     #                     DO NOT MODIFY CODE BELOW THIS LINE                     #
