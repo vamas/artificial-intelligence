@@ -28,7 +28,8 @@ class ActionLayer(BaseActionLayer):
         """        
         for effectA in self.children[actionA]:
             for effectB in self.children[actionB]:
-                return is_negating(effectA, effectB)
+                if is_negating(effectA, effectB):
+                    return True
         return False
 
     def _interference(self, actionA, actionB):
@@ -44,10 +45,12 @@ class ActionLayer(BaseActionLayer):
         """
         for precondA in self.parents[actionA]:
             for effectB in self.children[actionB]:
-                return is_negating(precondA, effectB)
+                if is_negating(precondA, effectB):
+                    return True               
         for effectA in self.children[actionA]:
             for precondB in self.parents[actionB]:
-                return is_negating(precondB, effectA)
+                if is_negating(precondB, effectA):
+                    return True
         return False
 
     def _competing_needs(self, actionA, actionB):
@@ -64,9 +67,9 @@ class ActionLayer(BaseActionLayer):
         """
         parent = self.parent_layer
         for precondA in self.parents[actionA]:
-            for precondB in self.parents[actionB]:
-                #return is_negating(precondA, precondB) | parent.is_mutex(precondA, precondB)
-                return parent.is_mutex(precondA, precondB)
+            for precondB in self.parents[actionB]:                
+                if is_negating(precondA, precondB) | parent.is_mutex(precondA, precondB):
+                    return True
         return False
 
 class LiteralLayer(BaseLiteralLayer):
@@ -85,7 +88,7 @@ class LiteralLayer(BaseLiteralLayer):
         parent = self.parent_layer
         for actionA in self.parents[literalA]:
             for actionB in self.parents[literalB]:
-                if not parent.is_mutex(actionA, actionB): # and not is_only_way_to_achieve(self.parents[literalA], actionA) and not is_only_way_to_achieve(self.parents[literalB], actionB):
+                if not parent.is_mutex(actionA, actionB):
                     return False
         return True
 
@@ -230,18 +233,15 @@ class PlanningGraph:
                 if goal not in layer:
                     allGoalsInLayer = False
                     break
-            # print("All goals are in layer-{0}: {1}".format(loc, allGoalsInLayer))
             if not allGoalsInLayer: continue
             
             twoGoalsAreMutex = False
             for goalA in self.goal:
                 for goalB in self.goal:
-                    # print("IsMutex {0}-{1}: {2}".format(goalA, goalB, layer.is_mutex(goalA, goalB)))
                     if layer.is_mutex(goalA, goalB):
                         twoGoalsAreMutex = True
                         break 
 
-            # print("Goals are mutexes: {0} on layer-{1}".format(twoGoalsAreMutex, loc))
             if not twoGoalsAreMutex:
                 return loc
 
