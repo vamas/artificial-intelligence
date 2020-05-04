@@ -70,6 +70,7 @@ def main(p_choices, s_choices):
     problems = [PROBLEMS[i-1] for i in map(int, p_choices)]
     searches = [SEARCHES[i-1] for i in map(int, s_choices)]
 
+    f = open("search_result.txt", "w")
     for pname, problem_fn in problems:
         for sname, search_fn, heuristic in searches:
             hstring = heuristic if not heuristic else " with {}".format(heuristic)
@@ -77,8 +78,11 @@ def main(p_choices, s_choices):
 
             problem_instance = problem_fn()
             heuristic_fn = None if not heuristic else getattr(problem_instance, heuristic)
-            run_search(problem_instance, search_fn, heuristic_fn)
-
+            problem = (pname + "\t" + sname + "\t" + ' '*50)[0:60]
+            result = run_search(problem_instance, search_fn, heuristic_fn)
+            output = problem + result[0].__repr__() + "\t" + str(len(result[1].solution())) + "\t" + str(result[2]) + "\n"
+            f.write(output)
+    f.close()
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description="Solve air cargo planning problems " + 

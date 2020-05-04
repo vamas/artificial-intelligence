@@ -28,6 +28,7 @@ def run_search(problem, search_function, parameter=None):
     print("{}\n".format(ip))
     show_solution(node, end - start)
     print()
+    return [ip, node, end - start]
 
 
 def show_solution(node, elapsed_time):
