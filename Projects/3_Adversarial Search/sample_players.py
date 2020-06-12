@@ -106,6 +106,7 @@ class MinimaxPlayer(BasePlayer):
             self.queue.put(random.choice(state.actions()))
         else:
             self.queue.put(self.minimax(state, depth=3))
+        # print('Opponent action selected')
 
     def minimax(self, state, depth):
 
