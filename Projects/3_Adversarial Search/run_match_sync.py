@@ -101,7 +101,7 @@ def call_with_timeout_ms( time_limit, function, *args, **kwargs ):
     time.sleep(0)   # If any other process wants to interrupt us, do it now
     if time_limit:
         def raise_timeout(signum, frame): raise TimeoutError    # DOC: https://docs.python.org/3.6/library/signal.html
-        signal.signal(signal.SIGPROF, raise_timeout)            # Register function to raise a TimeoutError on signal
+        signal.signal(signal.SIGTERM, raise_timeout)            # Register function to raise a TimeoutError on signal
         signal.setitimer(signal.ITIMER_PROF, time_limit/1000)   # Schedule the signal to be sent after time_limit in milliseconds
 
     try:
@@ -171,7 +171,7 @@ def play_sync( agents: Tuple[Agent,Agent],
             break
         finally:
             if time_limit and not debug:
-                signal.signal(signal.SIGPROF, signal.SIG_IGN)      # Unregister the timeout signal
+                signal.signal(signal.SIGTERM, signal.SIG_IGN)      # Unregister the timeout signal
 
         if action not in game_state.actions():
             status = Status.INVALID_MOVE
@@ -242,7 +242,7 @@ def main():
         custom_agent.name, results[custom_agent], match_count, percentage, test_agent.name, time_taken, time_taken/match_count
     )
     print()
-    print(message); _logger.info(message)
+    print(message)#; _logger.info(message)
     print()
 
 if __name__ == '__main__':

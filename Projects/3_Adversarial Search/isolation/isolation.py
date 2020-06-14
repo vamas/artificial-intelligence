@@ -20,32 +20,6 @@ for _ in range(_HEIGHT): _BLANK_BOARD = ((_BLANK_BOARD << (_WIDTH + 2)) | row)
 # declare constants describing the bit-wise offsets for each cardinal direction
 S, N, W, E = -_WIDTH - 2, _WIDTH + 2, 1, -1
 
-class Density(IntEnum):
-    N = N
-    NN = N + N
-    S = S
-    SS = S + S
-    W = W
-    WW = W + W
-    E = E
-    EE = E + E
-    NE = N + E
-    NENE = N + E + N + E
-    SE = S + E
-    SESE = S + E + S + E
-    SW = S + W
-    SWSW = S + W + S + W
-    NW = N + W
-    NWNW = N + W + N + W
-    NNE = N+N+E  # north-northeast (up, up, right)
-    ENE = E+N+E  # east-northeast (right, right, up)
-    ESE = E+S+E  # east-southeast (right, right, down)
-    SSE = S+S+E  # south-southeast (down, down, right)
-    SSW = S+S+W  # south-southwest (down, down, left)
-    WSW = W+S+W  # west-southwest (left, left, down)
-    WNW = W+N+W  # west-northwest (left, left, up)
-    NNW = N+N+W  # north-northwest (up, up, left)   
-
 class Action(IntEnum):
     """ The eight L-shaped steps that a knight can move in chess """
     NNE = N+N+E  # north-northeast (up, up, right)
@@ -193,19 +167,6 @@ class Isolation(NamedTuple('Isolation', [('board', int), ('ply_count', int), ('l
         """
         cells = range(_SIZE) if loc is None else (loc + a for a in Action)
         return [c for c in cells if c >= 0 and self.board & (1 << c)]
-
-    def densities(self, loc):
-        cells = range(_SIZE) if loc is None else (loc + d for d in Density)
-        return [c for c in cells if c >= 0 and self.board & (1 << c)]
-        
-    def ind2xy(self, ind):
-        """ Convert from board index value to xy coordinates
-
-        The coordinate frame is 0 in the bottom right corner, with x increasing
-        along the columns progressing towards the left, and y increasing along
-        the rows progressing towards teh top.
-        """
-        return (ind % (_WIDTH + 2), ind // (_WIDTH + 2))
 
     def _has_liberties(self, player_id):
         """ Return True if the player has any legal moves in the given state

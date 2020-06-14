@@ -3,7 +3,18 @@ import math
 
 from sample_players import DataPlayer
 
+def attenuation(value, alpha):
+    cond = True
+    while cond:
+        print(value)
+        value = value - value * alpha
+
 class CustomPlayer(DataPlayer):
+
+    def __init__(self, player_id):
+        super().__init__(player_id)
+        self.t = 1
+        self.alpha = 0.012
 
     """ Implement an agent using any combination of techniques discussed
     in lecture (or that you find online on your own) that can beat
@@ -36,11 +47,11 @@ class CustomPlayer(DataPlayer):
         """
         # randomly select a move as player 1 or 2 on an empty board, otherwise
         # return the optimal minimax move at a fixed search depth of 3 plies
-        if state.ply_count < 2:
+        if state.ply_count < 1:
             self.queue.put(random.choice(state.actions()))
         else:
             self.queue.put(self.minimax(state, depth=3))
-        # print('My action selected')
+        self.context = [self.t]
 
     def minimax(self, state, depth):
 
@@ -63,29 +74,35 @@ class CustomPlayer(DataPlayer):
         return max(state.actions(), key=lambda x: min_value(state.result(x), depth - 1))
 
     def score(self, state):
-        own_loc = state.locs[self.player_id]
-        opp_loc = state.locs[1 - self.player_id]
-        own_liberties = state.densities(own_loc)
-        opp_liberties = state.densities(opp_loc)
-        return len(own_liberties) - len(opp_liberties)
+      return self.heuristic(state)
 
-    def score1(self, state):
+    def heuristic(self, state):
+
+        self.t = self.t - self.t * self.alpha
+        t_Middle = 0.4
+        t_Final = 0.7
+        
         own_loc = state.locs[self.player_id]
         opp_loc = state.locs[1 - self.player_id]
         own_liberties = state.liberties(own_loc)
-        opp_liberties = state.liberties(opp_loc)
-        return len(own_liberties) - len(opp_liberties)    
+        opp_liberties = state.liberties(opp_loc)   
 
-    def score2(self, state):
-        own_loc = state.locs[self.player_id]
-        opp_loc = state.locs[1 - self.player_id]
-        own_liberties = state.densities(own_loc)
-        opp_liberties = state.densities(opp_loc)
-        return len(own_liberties) - len(opp_liberties) + self.distance(state)
-    
-    def distance(self, state):
-        x1, y1 = state.ind2xy(state.locs[self.player_id])
-        x2, y2 = state.ind2xy(state.locs[1 - self.player_id])
-        return math.sqrt((x1 - x2)**2 + (y1 - y2)**2)
+        ## Blocking opponent last only move
+        if len(opp_liberties) == 1 and own_loc in opp_liberties:    
+            return 10000
 
+        if self.t > t_Middle:
+            # Defensive
+            return len(own_liberties) - len(opp_liberties)
+        elif self.t > t_Final:
+            # Offensive
+            return len(own_liberties) - (len(opp_liberties) * 2)
+        else: 
+            # Attacking
+            if own_loc in opp_liberties:
+              return 1000
+            return  (len(own_liberties) - (len(opp_liberties) * 2)) + len(own_liberties)
+            
+
+        
 
