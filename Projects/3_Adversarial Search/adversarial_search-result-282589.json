@@ -1,0 +1,18 @@
+[
+    {
+        "description": "1. get_action() calls self.queue.put() at least once before timeout",
+        "message": "",
+        "advice": "",
+        "rubric_item_id": "11286",
+        "result": ".",
+        "traceback": ""
+    },
+    {
+        "description": "2. CustomPlayer successfully completes a game against itself",
+        "message": "",
+        "advice": "",
+        "rubric_item_id": "11287",
+        "result": ".",
+        "traceback": ""
+    }
+]
