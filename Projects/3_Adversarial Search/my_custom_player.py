@@ -1,13 +1,41 @@
 import random
 import math
+from enum import IntEnum
 
+import isolation
 from sample_players import DataPlayer
 
-def attenuation(value, alpha):
-    cond = True
-    while cond:
-        print(value)
-        value = value - value * alpha
+S, N, W, E = -isolation.isolation._WIDTH - 2, isolation.isolation._WIDTH + 2, 1, -1    
+
+class Range(IntEnum):
+    """Similar to Action class but includes the area radius of 2 around the state
+    """
+    NNE = N+N+E  
+    ENE = E+N+E  
+    ESE = E+S+E  
+    SSE = S+S+E  
+    SSW = S+S+W  
+    WSW = W+S+W  
+    WNW = W+N+W  
+    NNW = N+N+W  
+    N = N
+    NN = N+N
+    S = S
+    SS = S+S
+    E = E
+    EE = E+E
+    W = W
+    WW = W+W
+    NE = N+E
+    NENE = N+E+N+E
+    SE = S+E
+    SESE = S+E+S+E
+    SW = S+W
+    SWSW = S+W+S+W
+    NW = N+W
+    NWNW = N+W+N+W 
+
+_RangeSet = set(Range)  
 
 class CustomPlayer(DataPlayer):
 
@@ -54,12 +82,10 @@ class CustomPlayer(DataPlayer):
         if state.ply_count < 1:
             self.queue.put(random.choice(state.actions()))
         else:
-            self.queue.put(self.ab_decision(state, depth=5, alpha=-math.inf, beta=math.inf))
-
+            self.queue.put(self.ab_decision(state, depth=3, alpha=-math.inf, beta=math.inf))
         self.t = self.t - self.t * self.alpha
         self.context = [self.t]
-
-    
+   
     
     def ab_decision(self, state, depth, alpha, beta):
 
@@ -99,23 +125,42 @@ class CustomPlayer(DataPlayer):
         opp_loc = state.locs[1 - self.player_id]
         own_liberties = state.liberties(own_loc)
         opp_liberties = state.liberties(opp_loc)  
+        own_dencity, opp_dencity = self.dencities(state)
 
-        ## Blocking opponent last only move
+        features = [len(own_liberties), len(opp_liberties), 
+                    len(own_dencity), len(opp_dencity),
+                    self.only_opp_liberty_is_ours(own_loc, opp_liberties),
+                    self.opp_liberty_is_ours(own_loc, opp_liberties)]
+        weights = self.feature_weights()
+
+        score = sum([w*f for w,f in zip(weights, features)])
+        return score
+
+    def opp_liberty_is_ours(self, own_loc, opp_liberties):
+        if own_loc in opp_liberties:
+            return 1
+        return 0
+
+    def only_opp_liberty_is_ours(self, own_loc, opp_liberties):
         if len(opp_liberties) == 1 and own_loc in opp_liberties:    
-            return 10000
+            return 1
+        return 0
 
+    def dencities(self, state):
+        """ Similar to liberties function, returns list of available cells
+            in the current state range radius of 2
+        """
+        own_loc = state.locs[self.player_id]
+        own_cells = range(isolation.isolation._SIZE) if own_loc is None else (own_loc + a for a in Range)
+        opp_loc = state.locs[1 - self.player_id]
+        opp_cells = range(isolation.isolation._SIZE) if opp_loc is None else (opp_loc + a for a in Range)
+        return ([c for c in own_cells if c >= 0 and state.board & (1 << c)],
+                [c for c in opp_cells if c >= 0 and state.board & (1 << c)])
+
+    def feature_weights(self):
         if self.t > self.t_Middle:
-            # Defensive
-            return len(own_liberties) * 2 - len(opp_liberties)
-        elif self.t > self.t_Final:
-            # Offensive
-            return len(own_liberties) - (len(opp_liberties) * 2)
-        else: 
-            # Attacking
-            if own_loc in opp_liberties:
-              return 1000
-            return  (len(own_liberties) - (len(opp_liberties) * 2)) + len(own_liberties)
-            
-
-        
+            return [100, -100, 5, -5, 10000, 0]
+        if self.t > self.t_Final:
+            return [10, -10, 20, -10, 10000, 25]
+        return [10, -10, 30, -10, 10000, 250]
 
