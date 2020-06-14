@@ -15,86 +15,99 @@ class CustomPlayer(DataPlayer):
         super().__init__(player_id)
         self.t = 1
         self.alpha = 0.012
+        self.t_Middle = 0.3
+        self.t_Final = 0.8
 
-    """ Implement an agent using any combination of techniques discussed
-    in lecture (or that you find online on your own) that can beat
-    sample_players.GreedyPlayer in >80% of "fair" matches (see tournament.py
-    or readme for definition of fair matches).
-
-    Implementing get_action() is the only required method, but you can add any
-    other methods you want to perform minimax/alpha-beta/monte-carlo tree search,
-    etc.
-
+    """ Implement your own agent to play knight's Isolation
+    The get_action() method is the only required method for this project.
+    You can modify the interface for get_action by adding named parameters
+    with default values, but the function MUST remain compatible with the
+    default interface.
     **********************************************************************
-    NOTE: The test cases will NOT be run on a machine with GPU access, or
-          be suitable for using any other machine learning techniques.
+    NOTES:
+    - The test cases will NOT be run on a machine with GPU access, nor be
+      suitable for using any other machine learning techniques.
+    - You can pass state forward to your agent on the next turn by assigning
+      any pickleable object to the self.context attribute.
     **********************************************************************
     """
     def get_action(self, state):
-        """ Choose an action available in the current state
-
-        See RandomPlayer and GreedyPlayer for examples.
-
+        """ Employ an adversarial search technique to choose an action
+        available in the current state calls self.queue.put(ACTION) at least
         This method must call self.queue.put(ACTION) at least once, and may
-        call it as many times as you want; the caller is responsible for
-        cutting off the function after the search time limit has expired. 
-
+        call it as many times as you want; the caller will be responsible
+        for cutting off the function after the search time limit has expired.
+        See RandomPlayer and GreedyPlayer in sample_players for more examples.
         **********************************************************************
-        NOTE: since the caller is responsible for cutting off search, calling
-              get_action() from your own code will create an infinite loop!
-              See (and use!) the Isolation.play() function to run games.
+        NOTE: 
+        - The caller is responsible for cutting off search, so calling
+          get_action() from your own code will create an infinite loop!
+          Refer to (and use!) the Isolation.play() function to run games.
         **********************************************************************
         """
-        # randomly select a move as player 1 or 2 on an empty board, otherwise
-        # return the optimal minimax move at a fixed search depth of 3 plies
+        # TODO: Replace the example implementation below with your own search
+        #       method by combining techniques from lecture
+        #
+        # EXAMPLE: choose a random move without any search--this function MUST
+        #          call self.queue.put(ACTION) at least once before time expires
+        #          (the timer is automatically managed for you)
         if state.ply_count < 1:
             self.queue.put(random.choice(state.actions()))
         else:
-            self.queue.put(self.minimax(state, depth=3))
+            self.queue.put(self.ab_decision(state, depth=5, alpha=-math.inf, beta=math.inf))
+
+        self.t = self.t - self.t * self.alpha
         self.context = [self.t]
 
-    def minimax(self, state, depth):
+    
+    
+    def ab_decision(self, state, depth, alpha, beta):
 
-        def min_value(state, depth):
-            if state.terminal_test(): return state.utility(self.player_id)
-            if depth <= 0: return self.score(state)
+        def min_value(state, depth, alpha, beta):
+            if state.terminal_test():
+                return state.utility(self.player_id)
+            if depth <= 0: 
+                return self.score(state)
             value = float("inf")
-            for action in state.actions():
-                value = min(value, max_value(state.result(action), depth - 1))
+            for a in state.actions():
+                value = min(value, max_value(state.result(a), depth - 1, alpha, beta))
+                if value <= alpha:
+                    return value
+                beta = min(beta, value)
             return value
 
-        def max_value(state, depth):
-            if state.terminal_test(): return state.utility(self.player_id)
-            if depth <= 0: return self.score(state)
-            value = float("-inf")
-            for action in state.actions():
-                value = max(value, min_value(state.result(action), depth - 1))
+        def max_value(state, depth, alpha, beta):
+            if state.terminal_test():
+                return state.utility(self.player_id)
+            if depth <= 0: 
+                return self.score(state)
+            value = -float("inf")
+            for a in state.actions():
+                value = max(value, min_value(state.result(a), depth - 1, alpha, beta))
+                if value >= beta:
+                    return value
+                alpha = max(alpha, value)
             return value
 
-        return max(state.actions(), key=lambda x: min_value(state.result(x), depth - 1))
+        return max(state.actions(), key=lambda x: min_value(state.result(x), depth - 1, alpha, beta))
 
     def score(self, state):
       return self.heuristic(state)
 
     def heuristic(self, state):
-
-        self.t = self.t - self.t * self.alpha
-        t_Middle = 0.4
-        t_Final = 0.7
-        
         own_loc = state.locs[self.player_id]
         opp_loc = state.locs[1 - self.player_id]
         own_liberties = state.liberties(own_loc)
-        opp_liberties = state.liberties(opp_loc)   
+        opp_liberties = state.liberties(opp_loc)  
 
         ## Blocking opponent last only move
         if len(opp_liberties) == 1 and own_loc in opp_liberties:    
             return 10000
 
-        if self.t > t_Middle:
+        if self.t > self.t_Middle:
             # Defensive
-            return len(own_liberties) - len(opp_liberties)
-        elif self.t > t_Final:
+            return len(own_liberties) * 2 - len(opp_liberties)
+        elif self.t > self.t_Final:
             # Offensive
             return len(own_liberties) - (len(opp_liberties) * 2)
         else: 
